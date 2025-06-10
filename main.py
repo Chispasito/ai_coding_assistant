@@ -4,8 +4,6 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
-
-
 def main():
     load_dotenv()
     api_key = os.environ.get("GEMINI_API_KEY")
@@ -32,7 +30,6 @@ def main():
               f"Prompt tokens: {response.usage_metadata.prompt_token_count}\n"
               f"Response tokens: {response.usage_metadata.cached_content_token_count}"
         )
-    else: 
-        print(response.text)
+    print(response.text)
 
 main()
