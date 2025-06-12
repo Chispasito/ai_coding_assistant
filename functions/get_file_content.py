@@ -1,19 +1,27 @@
 import os
 
+MAX_CHARS = 10000
+
 def get_file_content(working_directory, file_path):
-    joined_dir = os.path.join(working_directory, file_path)
+    joined_path = os.path.join(working_directory, file_path)
     
-    if not os.path.isfile(os.path.abspath(joined_dir)):
+    if not os.path.isfile(os.path.abspath(joined_path)):
         return f'Error: File not found or is not a regular file: "{file_path}"'
-    elif not os.path.abspath(joined_dir).startswith(os.path.abspath(working_directory)):
+    elif not os.path.abspath(joined_path).startswith(os.path.abspath(working_directory)):
         return f'Error: Cannot read "{file_path}" as it is outside the permitted working directory'
     else: 
-        string_concat = ""
-        dir_list = os.listdir(joined_dir)
-        for i in range(len(dir_list)):
-            string_concat += "-" + str(dir_list[i]) + ": file_size=" + \
-            str(os.path.getsize(os.path.join(joined_dir, dir_list[i]))) + " bytes, " + \
-            "is_dir=" + str(os.path.isdir(os.path.join(joined_dir, dir_list[i])))
-            if not i == len(dir_list) -1:
-                string_concat += "\n"
+        string_concat = "pass"
+        with open(joined_path, "r") as f:
+            string_concat = f.read(MAX_CHARS)
+        if len(string_concat) == MAX_CHARS:
+            string_concat += f"[...File \"{file_path}\" truncated at 10000 characters]"
         return string_concat
+
+
+'''
+test.py 
+
+print(get_file_content("calculator", "main.py"))
+print(get_file_content("calculator", "pkg/calculator.py"))
+print(get_file_content("calculator", "/bin/cat"))
+'''
