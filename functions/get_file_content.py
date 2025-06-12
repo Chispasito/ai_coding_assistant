@@ -1,12 +1,12 @@
 import os
 
-def get_files_info(working_directory, directory=None):
-    joined_dir = os.path.join(working_directory, directory)
+def get_file_content(working_directory, file_path):
+    joined_dir = os.path.join(working_directory, file_path)
     
-    if not os.path.isdir(os.path.abspath(joined_dir)):
-        return f'Error1: "{directory}" is not a directory'
+    if not os.path.isfile(os.path.abspath(joined_dir)):
+        return f'Error: File not found or is not a regular file: "{file_path}"'
     elif not os.path.abspath(joined_dir).startswith(os.path.abspath(working_directory)):
-        return f'Error: Cannot list "{directory}" as it is outside the permitted working directory'
+        return f'Error: Cannot read "{file_path}" as it is outside the permitted working directory'
     else: 
         string_concat = ""
         dir_list = os.listdir(joined_dir)
