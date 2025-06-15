@@ -1,6 +1,6 @@
 import os
 
-def write_file(working_directory, file_path, content):
+def write_file(working_directory='./calculator', file_path=None, content=''):
     joined_path = os.path.join(working_directory, file_path)
     
     # if not os.path.isfile(os.path.abspath(joined_path)):

@@ -1,7 +1,6 @@
 import os
 
-def get_files_info(working_directory, directory=None):
-    working_directory = "ai_coding_assistant"
+def get_files_info(working_directory='./calculator', directory=None):
     joined_dir = os.path.join(working_directory, directory)
     
     if not os.path.isdir(os.path.abspath(joined_dir)):
