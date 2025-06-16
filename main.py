@@ -19,7 +19,7 @@ def call_function(function_call_part, verbose=False):
     try:
         return function_map[function_call_part.name](**function_call_part.args)
     except Exception as e:
-        return "Whoops: " + e
+        return e
 
 def main():
     load_dotenv()
@@ -121,7 +121,7 @@ def main():
         config=config_setup,
     )
     
-    if len(sys.argv) > 2 and sys.argv[2] == "--verbose":
+    if len(sys.argv) > 2 and "--verbose" in sys.argv:
         print(f"User prompt: {user_prompt}\n"
               f"Prompt tokens: {response.usage_metadata.prompt_token_count}\n"
               f"Response tokens: {response.usage_metadata.cached_content_token_count}"
@@ -130,7 +130,8 @@ def main():
     if response.function_calls and len(response.function_calls) > 0:
         # print("function calls ---: ", response.function_calls)
         for function_call_part in response.function_calls:
-            print(f"Calling function: {function_call_part.name}({function_call_part.args})")
+            if len(sys.argv) > 2 and "--verbose" in sys.argv:
+                print(f"Calling function: {function_call_part.name}({function_call_part.args})")
             print(call_function(function_call_part))
     print(response.text)
 
