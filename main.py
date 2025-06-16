@@ -3,6 +3,23 @@ import sys
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+from functions.get_files_info import *
+from functions.get_file_content import *
+from functions.write_file import *
+from functions.run_python_file import *
+
+function_map = {
+    "get_file_content": get_file_content, 
+    "get_files_info": get_files_info, 
+    "run_python_file": run_python_file, 
+    "write_file": write_file
+}
+
+def call_function(function_call_part, verbose=False):
+    try:
+        return function_map[function_call_part.name](**function_call_part.args)
+    except Exception as e:
+        return e
 
 def main():
     load_dotenv()
@@ -104,18 +121,18 @@ def main():
         config=config_setup,
     )
     
-    if len(sys.argv) > 2 and sys.argv[2] == "--verbose":
+    if len(sys.argv) > 2 and "--verbose" in sys.argv:
         print(f"User prompt: {user_prompt}\n"
               f"Prompt tokens: {response.usage_metadata.prompt_token_count}\n"
               f"Response tokens: {response.usage_metadata.cached_content_token_count}"
         )
-    
 
     if response.function_calls and len(response.function_calls) > 0:
         # print("function calls ---: ", response.function_calls)
         for function_call_part in response.function_calls:
-            print(f"Calling function: {function_call_part.name}({function_call_part.args})")
-    else:
-        print(response.text)
+            if len(sys.argv) > 2 and "--verbose" in sys.argv:
+                print(f"Calling function: {function_call_part.name}({function_call_part.args})")
+            print(call_function(function_call_part))
+    print(response.text)
 
 main()

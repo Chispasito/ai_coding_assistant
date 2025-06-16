@@ -2,7 +2,7 @@ import os
 
 MAX_CHARS = 10000
 
-def get_file_content(working_directory, file_path):
+def get_file_content(working_directory='./calculator', file_path=None):
     joined_path = os.path.join(working_directory, file_path)
     
     if not os.path.isfile(os.path.abspath(joined_path)):

@@ -1,7 +1,7 @@
 import os
 import subprocess
 
-def run_python_file(working_directory, file_path):
+def run_python_file(working_directory='./calculator', file_path=None):
     joined_path = os.path.join(working_directory, file_path)
     if not os.path.isfile(os.path.abspath(joined_path)):
         return f'Error: File "{file_path}" not found.'
