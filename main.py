@@ -8,6 +8,8 @@ from functions.get_file_content import *
 from functions.write_file import *
 from functions.run_python_file import *
 
+MAX_LOOPS: int = 20
+
 function_map = {
     "get_file_content": get_file_content, 
     "get_files_info": get_files_info, 
@@ -17,9 +19,76 @@ function_map = {
 
 def call_function(function_call_part, verbose=False):
     try:
-        return function_map[function_call_part.name](**function_call_part.args)
+        call = function_map[function_call_part.name](**function_call_part.args)
+        return call
     except Exception as e:
         return e
+
+def get_schema():
+    schema_get_files_info = types.FunctionDeclaration(
+        name="get_files_info",
+        description="Lists files in the specified directory along with their sizes, constrained to the working directory.",
+        parameters=types.Schema(
+            type=types.Type.OBJECT,
+            properties={
+                "directory": types.Schema(
+                    type=types.Type.STRING,
+                    description="The directory to list files from, relative to the working directory. If not provided, lists files in the working directory itself.",
+                ),
+            },
+            required=["directory"],
+        ),
+    )
+
+    schema_get_file_content = types.FunctionDeclaration(
+        name="get_file_content",
+        description="Lists file content in the specified directory along, constrained to 10,000 characters.",
+        parameters=types.Schema(
+            type=types.Type.OBJECT,
+            properties={
+                "file_path": types.Schema(
+                    type=types.Type.STRING,
+                    description="The file path to get file content from, relative to the working directory. If not provided, get file content in the working directory itself.",
+                ),
+            },
+            required=["file_path"],
+        ),
+    )
+
+    schema_write_file = types.FunctionDeclaration(
+        name="write_file",
+        description="Writes to file in specified directory.",
+        parameters=types.Schema(
+            type=types.Type.OBJECT,
+            properties={
+                "file_path": types.Schema(
+                    type=types.Type.STRING,
+                    description="The file to write content to, relative to the working directory. If not provided, write to file in the working directory itself.",
+                ),
+                "content": types.Schema(
+                    type=types.Type.STRING,
+                    description="the actual content to write"
+                ),
+            },
+            required=["file_path"],
+        ),
+    )
+
+    schema_run_python_file = types.FunctionDeclaration(
+        name="run_python_file",
+        description="Runs python file in specified directory",
+        parameters=types.Schema(
+            type=types.Type.OBJECT,
+            properties={
+                "file_path": types.Schema(
+                    type=types.Type.STRING,
+                    description="The directory to run python file from, relative to the working directory. If not provided, run file in the working directory itself.",
+                ),
+            },
+            required=["file_path"],
+        ),
+    )
+    return schema_get_file_content, schema_get_files_info, schema_write_file, schema_run_python_file
 
 def main():
     load_dotenv()
@@ -39,65 +108,8 @@ def main():
 
         All paths you provide should be relative toworking directory. You do not need to specify the working directory in your function calls as it is automatically injected for security reasons.
         """    
-    schema_get_files_info = types.FunctionDeclaration(
-        name="get_files_info",
-        description="Lists files in the specified directory along with their sizes, constrained to the working directory.",
-        parameters=types.Schema(
-            type=types.Type.OBJECT,
-            properties={
-                "directory": types.Schema(
-                    type=types.Type.STRING,
-                    description="The directory to list files from, relative to the working directory. If not provided, lists files in the working directory itself.",
-                ),
-            },
-        ),
-    )
 
-    schema_get_file_content = types.FunctionDeclaration(
-        name="get_file_content",
-        description="Lists file content in the specified directory along, constrained to 10,000 characters.",
-        parameters=types.Schema(
-            type=types.Type.OBJECT,
-            properties={
-                "file_path": types.Schema(
-                    type=types.Type.STRING,
-                    description="The directory to get file content from, relative to the working directory. If not provided, get file content in the working directory itself.",
-                ),
-            },
-        ),
-    )
-
-    schema_write_file = types.FunctionDeclaration(
-        name="write_file",
-        description="Writes to file in specified directory.",
-        parameters=types.Schema(
-            type=types.Type.OBJECT,
-            properties={
-                "file_path": types.Schema(
-                    type=types.Type.STRING,
-                    description="The file to write content to, relative to the working directory. If not provided, write to file in the working directory itself.",
-                ),
-                "content": types.Schema(
-                    type=types.Type.STRING,
-                    description="the actual content to write"
-                ),
-            },
-        ),
-    )
-
-    schema_run_python_file = types.FunctionDeclaration(
-        name="run_python_file",
-        description="Runs python file in specified directory",
-        parameters=types.Schema(
-            type=types.Type.OBJECT,
-            properties={
-                "file_path": types.Schema(
-                    type=types.Type.STRING,
-                    description="The directory to run python file from, relative to the working directory. If not provided, run file in the working directory itself.",
-                ),
-            },
-        ),
-    )
+    schema_get_file_content, schema_get_files_info, schema_write_file, schema_run_python_file = get_schema()
 
     available_functions = types.Tool(
         function_declarations=[
@@ -115,24 +127,36 @@ def main():
     
     messages = [types.Content(role="user", parts=[types.Part(text=user_prompt)]),]
 
-    response = client.models.generate_content(
-        model=model_name,
-        contents=messages,
-        config=config_setup,
-    )
-    
-    if len(sys.argv) > 2 and "--verbose" in sys.argv:
-        print(f"User prompt: {user_prompt}\n"
-              f"Prompt tokens: {response.usage_metadata.prompt_token_count}\n"
-              f"Response tokens: {response.usage_metadata.cached_content_token_count}"
+    loop_count = 0
+    while loop_count < MAX_LOOPS:
+        response = client.models.generate_content(
+            model=model_name,
+            contents=messages,
+            config=config_setup,
         )
 
-    if response.function_calls and len(response.function_calls) > 0:
+        for candidate in response.candidates:
+            messages.append(candidate.content)
+
+        if len(sys.argv) > 2 and "--verbose" in sys.argv:
+            print(f"User prompt: {user_prompt}\n"
+                f"Prompt tokens: {response.usage_metadata.prompt_token_count}\n"
+                f"Response tokens: {response.usage_metadata.cached_content_token_count}"
+            )
+
+        if not (response.function_calls and len(response.function_calls) > 0):
+            break
+
         # print("function calls ---: ", response.function_calls)
         for function_call_part in response.function_calls:
             if len(sys.argv) > 2 and "--verbose" in sys.argv:
                 print(f"Calling function: {function_call_part.name}({function_call_part.args})")
-            print(call_function(function_call_part))
+            called = call_function(function_call_part)
+            messages.append(types.Content(role="user", parts=[types.Part(text=called)]))
+            #print(called)
+        
+        loop_count += 1
+    
     print(response.text)
 
 main()

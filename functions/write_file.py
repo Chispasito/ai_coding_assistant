@@ -1,6 +1,8 @@
 import os
 
 def write_file(working_directory='./calculator', file_path=None, content=''):
+    if file_path is None:
+        return 'Error: file_path parameter is required'
     joined_path = os.path.join(working_directory, file_path)
     
     # if not os.path.isfile(os.path.abspath(joined_path)):

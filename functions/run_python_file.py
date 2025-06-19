@@ -2,7 +2,10 @@ import os
 import subprocess
 
 def run_python_file(working_directory='./calculator', file_path=None):
+    if file_path is None:
+        return 'Error: file_path parameter is required'
     joined_path = os.path.join(working_directory, file_path)
+    
     if not os.path.isfile(os.path.abspath(joined_path)):
         return f'Error: File "{file_path}" not found.'
     elif not os.path.abspath(joined_path).startswith(os.path.abspath(working_directory)):

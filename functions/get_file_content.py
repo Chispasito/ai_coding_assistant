@@ -3,6 +3,8 @@ import os
 MAX_CHARS = 10000
 
 def get_file_content(working_directory='./calculator', file_path=None):
+    if file_path is None:
+        return 'Error: file_path parameter is required'
     joined_path = os.path.join(working_directory, file_path)
     
     if not os.path.isfile(os.path.abspath(joined_path)):
